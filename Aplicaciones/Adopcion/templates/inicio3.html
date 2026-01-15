@@ -5,7 +5,6 @@
 <h1>Listado de adopciones realizadas</h1>
 
 <a href="{% url 'nuevaAdopcion' %}" class="btn btn-primary">Agregar nueva adopcion</a>
-
 <br><br>
 
 <table class="table table-border table-striped table-hover" id="tbl_ado">
@@ -17,9 +16,8 @@
             <th>Telefono</th>
             <th>Mascota</th>
             <th>Fecha</th>
-            {% if user.is_superuser %}
+            <th>Estado</th>
             <th>Acciones</th>
-            {% endif %}
         </tr>
     </thead>
     <tbody>
@@ -31,8 +29,7 @@
             <td>{{ adopcion.telefono }}</td>
             <td>{{ adopcion.mascota.nombre }}</td>
             <td>{{ adopcion.fecha }}</td>
-
-            {% if user.is_superuser %}
+            <td>{{ adopcion.estado }}</td>
             <td>
                 <a href="{% url 'editarAdopcion' adopcion.id %}" class="btn btn-outline-warning">
                     <i class="fa fa-pen"></i>
@@ -41,36 +38,11 @@
                     <i class="fa fa-trash"></i>
                 </a>
 
-                <script>
-                document.addEventListener("DOMContentLoaded", function () {
-                    const botonesEliminar = document.querySelectorAll(".btnEliminar");
-
-                    botonesEliminar.forEach(boton => {
-                        boton.addEventListener("click", function (e) {
-                            e.preventDefault(); 
-
-                            const url = this.getAttribute("href");
-
-                            Swal.fire({
-                                title: "¿Estas seguro?",
-                                text: "Una vez eliminado no hay vuelta atras",
-                                icon: "warning",
-                                showCancelButton: true,
-                                confirmButtonColor: "#3085d6",
-                                cancelButtonColor: "#d33",
-                                confirmButtonText: "Si, eliminar",
-                                cancelButtonText: "Cancelar"
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = url; 
-                                }
-                            });
-                        });
-                    });
-                });
-                </script>
+                {% if adopcion.estado == 'pendiente' %}
+                    <a href="{% url 'aceptarAdopcion' adopcion.id %}" class="btn btn-outline-success">Aceptar</a>
+                    <a href="{% url 'rechazarAdopcion' adopcion.id %}" class="btn btn-outline-secondary">Rechazar</a>
+                {% endif %}
             </td>
-            {% endif %}
         </tr>
         {% endfor %}
     </tbody>
@@ -78,11 +50,33 @@
 </div>
 
 <script>
-    $(document).ready(function () {
-      let table = new DataTable('#tbl_ado', {
-        language: {
-          url: 'https://cdn.datatables.net/plug-ins/2.3.1/i18n/es-ES.json'
-        },
+document.addEventListener("DOMContentLoaded", function () {
+    const botonesEliminar = document.querySelectorAll(".btnEliminar");
+    botonesEliminar.forEach(boton => {
+        boton.addEventListener("click", function (e) {
+            e.preventDefault(); 
+            const url = this.getAttribute("href");
+            Swal.fire({
+                title: "Estas seguro?",
+                text: "Una vez eliminado no hay vuelta atras",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Si, eliminar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url; 
+                }
+            });
+        });
+    });
+});
+
+$(document).ready(function () {
+    let table = new DataTable('#tbl_ado', {
+        language: { url: 'https://cdn.datatables.net/plug-ins/2.3.1/i18n/es-ES.json' },
         dom: 'lBfrtip',
         pageLength: 3,
         buttons: [
@@ -92,10 +86,10 @@
           { extend: 'pdf', text: 'PDF', className: 'btn btn-danger me-2' },
           { extend: 'print', text: 'Imprimir', className: 'btn btn-secondary me-2' }
         ]
-      });
     });
+});
 </script>
 
-<br><br><br><br><br><br>
 {% endblock %}
+
 

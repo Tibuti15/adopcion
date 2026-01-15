@@ -2,23 +2,18 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
-from django.db.models import Count
 import os
-import json
 
 from .models import Mascota
 
-
 def inicio(request):
-    mascotas = Mascota.objects.filter(adoptado=False)
+    mascotas = Mascota.objects.all()
     return render(request, 'listaMascotas.html', {'mascotas': mascotas})
-
 
 @login_required
 def nuevaMascota(request):
     especies = Mascota.ESPECIE_CHOICES
     return render(request, 'nuevaMascota.html', {'especies': especies})
-
 
 @login_required
 def guardarMascota(request):
@@ -33,6 +28,10 @@ def guardarMascota(request):
             messages.error(request, 'Todos los campos son obligatorios')
             return redirect('nuevaMascota')
 
+        if Mascota.objects.filter(codigo=codigo).exists():
+            messages.error(request, 'Ya existe una mascota con este codigo')
+            return redirect('nuevaMascota')
+
         Mascota.objects.create(
             codigo=codigo,
             nombre=nombre,
@@ -44,20 +43,14 @@ def guardarMascota(request):
         messages.success(request, 'Mascota agregada correctamente')
         return redirect('inicio')
 
-    messages.error(request, 'Método no permitido')
+    messages.error(request, 'Metodo no permitido')
     return redirect('inicio')
-
 
 @login_required
 def editarMascota(request, id):
     mascotaEditar = get_object_or_404(Mascota, id=id)
     especies = Mascota.ESPECIE_CHOICES
-    return render(
-        request,
-        'editarMascota.html',
-        {'mascotaEditar': mascotaEditar, 'especies': especies}
-    )
-
+    return render(request, 'editarMascota.html', {'mascotaEditar': mascotaEditar, 'especies': especies})
 
 @login_required
 def procesarEdicionMascota(request):
@@ -74,6 +67,11 @@ def procesarEdicionMascota(request):
         if imgMascotaAct:
             mascota.imgMascota = imgMascotaAct
 
+        
+        if Mascota.objects.exclude(id=mascota.id).filter(codigo=mascota.codigo).exists():
+            messages.error(request, 'Ya existe otra mascota con este codigo')
+            return redirect('editarMascota', id=mascota.id)
+
         mascota.save()
         messages.success(request, 'Mascota editada correctamente')
         return redirect('inicio')
@@ -81,10 +79,6 @@ def procesarEdicionMascota(request):
     messages.error(request, 'Error al editar la mascota')
     return redirect('inicio')
 
-
-# ---------------------------------------------
-# ELIMINAR MASCOTA
-# ---------------------------------------------
 @login_required
 def eliminarMascota(request, id):
     mascotaEliminar = get_object_or_404(Mascota, id=id)
@@ -99,35 +93,3 @@ def eliminarMascota(request, id):
     return redirect('inicio')
 
 
-def reporteAdopcion(request):
-    totalAdoptadas = Mascota.objects.filter(adoptado=True).count()
-    totalDisponibles = Mascota.objects.filter(adoptado=False).count()
-    totalGeneral = totalAdoptadas + totalDisponibles
-
-    data_especies = (
-        Mascota.objects.filter(adoptado=True)
-        .values('especie')
-        .annotate(total=Count('id'))
-        .order_by('-total')
-    )
-
-    chart_especies = [['Especie', 'Cantidad']]
-    for item in data_especies:
-        chart_especies.append([item['especie'], item['total']])
-
-    chart_estado = [
-        ['Estado', 'Cantidad'],
-        ['Adoptadas', totalAdoptadas],
-        ['Disponibles', totalDisponibles],
-    ]
-
-    contexto = {
-        'totalAdoptadas': totalAdoptadas,
-        'totalDisponibles': totalDisponibles,
-        'totalGeneral': totalGeneral,
-        'porcentajeAdoptadas': (totalAdoptadas / totalGeneral * 100) if totalGeneral > 0 else 0,
-        'chart_especies': json.dumps(chart_especies),
-        'chart_estado': json.dumps(chart_estado),
-    }
-
-    return render(request, 'reporteAdopcion.html', contexto)
