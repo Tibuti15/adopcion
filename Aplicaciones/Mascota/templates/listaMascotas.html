@@ -1,0 +1,116 @@
+{% extends './plantilla.html' %}
+{% block contenido %}
+
+<div class="container">
+    <h1>Listado de Mascotas</h1>
+
+    <a href="{% url 'nuevaMascota' %}" class="btn btn-primary mb-3">
+        Agregar Mascota
+    </a>
+
+    <table class="table table-bordered table-striped table-hover" id="tbl_mascotas">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Nombre</th>
+                <th>Especie</th>
+                <th>Edad</th>
+                <th>Adoptado</th>
+                <th>Foto</th>
+                {% if user.is_superuser %}
+                <th>Acciones</th>
+                {% endif %}
+            </tr>
+        </thead>
+
+        <tbody>
+            {% for mascota in mascotas %}
+            <tr>
+                <td>{{ mascota.id }}</td>
+                <td>{{ mascota.codigo }}</td>
+                <td>{{ mascota.nombre }}</td>
+                <td>{{ mascota.especie }}</td>
+                <td>{{ mascota.edad }}</td>
+                <td>
+                    {% if mascota.adoptado %}
+                        <span class="badge bg-success">Sí</span>
+                    {% else %}
+                        <span class="badge bg-danger">No</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if mascota.imgMascota %}
+                        <img src="{{ mascota.imgMascota.url }}" height="80" alt="{{ mascota.nombre }}">
+                    {% else %}
+                        Ninguna
+                    {% endif %}
+                </td>
+
+                {% if user.is_superuser %}
+                <td>
+                    <a href="{% url 'editarMascota' mascota.id %}" 
+                       class="btn btn-outline-warning btn-sm me-1">
+                        <i class="fa fa-pen"></i>
+                    </a>
+
+                    <a href="{% url 'eliminarMascota' mascota.id %}" 
+                       class="btnEliminar btn btn-outline-danger btn-sm">
+                        <i class="fa fa-trash"></i>
+                    </a>
+                </td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- CONFIRMACIÓN ELIMINAR -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    document.querySelectorAll(".btnEliminar").forEach(boton => {
+        boton.addEventListener("click", function (e) {
+            e.preventDefault();
+            const url = this.getAttribute("href");
+
+            Swal.fire({
+                title: "¿Estás seguro?",
+                text: "Una vez eliminada no hay vuelta atrás",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+
+<!-- DATATABLE -->
+<script>
+$(document).ready(function () {
+    new DataTable('#tbl_mascotas', {
+        language: {
+            url: 'https://cdn.datatables.net/plug-ins/2.3.1/i18n/es-ES.json'
+        },
+        dom: 'lBfrtip',
+        pageLength: 5,
+        buttons: [
+            { extend: 'copy', text: 'Copiar', className: 'btn btn-primary me-2' },
+            { extend: 'csv', text: 'CSV', className: 'btn btn-info me-2' },
+            { extend: 'excel', text: 'Excel', className: 'btn btn-success me-2' },
+            { extend: 'pdf', text: 'PDF', className: 'btn btn-danger me-2' },
+            { extend: 'print', text: 'Imprimir', className: 'btn btn-secondary me-2' }
+        ]
+    });
+});
+</script>
+
+{% endblock %}

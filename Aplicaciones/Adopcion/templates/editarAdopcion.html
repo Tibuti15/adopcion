@@ -1,0 +1,74 @@
+{% extends './plantilla.html' %}
+{% block contenido %}
+<br><br><br><br>
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6 bg-light p-4 rounded">
+        <h1>Editar adopcion</h1>
+        <form action="{% url 'procesoEditarAdopcion' %}" method="post" id="frm_editar_Ado">
+            {% csrf_token %}
+
+            <input type="hidden" name="id" value="{{ adopcionEditar.id }}">
+
+            <label for="nombre_adoptante">Nombre Adoptante</label>
+            <input class="form-control" type="text" name="nombre_adoptante" id="nombre_adoptante" value="{{ adopcionEditar.nombre_adoptante }}" required>
+            <br>
+
+            <label for="correo">Correo</label>
+            <input class="form-control" type="email" name="correo" id="correo" value="{{ adopcionEditar.correo }}" required>
+            <br>
+
+            <label for="telefono">Telefono</label>
+            <input class="form-control" type="text" name="telefono" id="telefono" value="{{ adopcionEditar.telefono }}" required>
+            <br>
+
+            <label for="mascota">Mascota</label>
+            <select class="form-control" name="mascota" id="mascota" required>
+                {% for mascota in mascotas %}
+                    <option value="{{ mascota.id }}" {% if mascota.id == adopcionEditar.mascota.id %}selected{% endif %}>
+                        {{ mascota.nombre }}
+                    </option>
+                {% endfor %}
+            </select>
+            <br>
+
+            <button class="btn btn-primary" type="submit">Actualizar</button>
+            <a class="btn btn-outline-danger" href="{% url 'inicioadopcion' %}">Cancelar</a>
+        </form>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+
+<script>
+    $("#frm_editar_Ado").validate({
+        rules: {
+            "nombre_adoptante": { required: true, minlength: 3 },
+            "correo": { required: true, email: true },
+            "telefono": { required: true, minlength: 7 },
+            "mascota": { required: true }
+        },
+        messages: {
+            "nombre_adoptante": {
+                required: "Ingrese el nombre del adoptante",
+                minlength: "Minimo 3 caracteres"
+            },
+            "correo": {
+                required: "Ingrese un correo",
+                email: "Ingrese un correo valido"
+            },
+            "telefono": {
+                required: "Ingrese un telefono",
+                minlength: "Minimo 7 caracteres"
+            },
+            "mascota": { required: "Seleccione una mascota" }
+        },
+        errorClass: "is-invalid",
+        validClass: "is-valid",
+        errorPlacement: function(error, element) {
+            error.insertAfter(element);
+        }
+    });
+</script>
+
+{% endblock %}

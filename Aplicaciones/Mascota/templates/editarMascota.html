@@ -1,0 +1,108 @@
+{% extends './plantilla.html' %}
+{% block contenido %}
+
+<div class="row">
+    <div class="col-md-3"></div>
+
+    <div class="col-md-6">
+        <h1 class="text-center">Editar Mascota</h1>
+
+        <form action="{% url 'procesarEdicionMascota' %}" 
+              method="post" 
+              enctype="multipart/form-data" 
+              id="frmEditarMascota">
+
+            {% csrf_token %}
+            <input type="hidden" name="id" value="{{ mascotaEditar.id }}">
+
+            <!-- CODIGO -->
+            <label for="codigo">Codigo</label>
+            <input class="form-control" type="text" name="codigo" 
+                   id="codigo" value="{{ mascotaEditar.codigo }}" maxlength="50">
+            <br>
+
+            <!-- NOMBRE -->
+            <label for="nombre">Nombre</label>
+            <input class="form-control" type="text" name="nombre" 
+                   id="nombre" value="{{ mascotaEditar.nombre }}" maxlength="200">
+            <br>
+
+            <!-- ESPECIE -->
+            <label for="especie">Especie</label>
+            <select class="form-control" name="especie" id="especie" required>
+                <option value="">Seleccione una especie</option>
+                {% for valor, etiqueta in especies %}
+                    <option value="{{ valor }}" {% if mascotaEditar.especie == valor %}selected{% endif %}>
+                        {{ etiqueta }}
+                    </option>
+                {% endfor %}
+            </select>
+            <br>
+
+            <!-- EDAD -->
+            <label for="edad">Edad</label>
+            <input class="form-control" type="number" name="edad" 
+                   id="edad" value="{{ mascotaEditar.edad }}" min="0" max="30">
+            <br>
+
+            <!-- ADOPTADO -->
+            <label>
+                <input type="checkbox" name="adoptado" 
+                       {% if mascotaEditar.adoptado %}checked{% endif %}>
+                Adoptado
+            </label>
+            <br><br>
+
+            <!-- IMAGEN ACTUAL -->
+            <label>Imagen actual</label><br>
+            {% if mascotaEditar.imgMascota %}
+                <img src="{{ mascotaEditar.imgMascota.url }}" height="80" alt="{{ mascotaEditar.nombre }}">
+            {% else %}
+                No tiene imagen
+            {% endif %}
+            <br><br>
+
+            <!-- ACTUALIZAR IMAGEN -->
+            <label for="imgMascota">Actualizar imagen</label>
+            <input id="imgMascota" name="imgMascota" type="file" class="file">
+            <br><br>
+
+            <a class="btn btn-danger" href="{% url 'inicio' %}">Cancelar</a>
+            <button type="submit" class="btn btn-success">Guardar</button>
+        </form>
+    </div>
+
+    <div class="col-md-3"></div>
+</div>
+
+<!-- FILEINPUT -->
+<script>
+$(document).ready(function() {
+    $("#imgMascota").fileinput({
+        language: "es",
+        allowedFileExtensions: ["jpg", "png", "jpeg"],
+        showCaption: false,
+        dropZoneEnabled: true,
+        showClose: false,
+        maxFileSize: 2048 // 2 MB
+    });
+    $('#frmEditarMascota').validate({
+        rules: {
+            codigo: { required: true, maxlength: 50 },
+            nombre: { required: true, maxlength: 200 },
+            especie: { required: true },
+            edad: { required: true, min: 0, max: 30 }
+        },
+        messages: {
+            codigo: { required: "Ingrese el codigo", maxlength: "Maximo 50 caracteres" },
+            nombre: { required: "Ingrese el nombre", maxlength: "Maximo 200 caracteres" },
+            especie: { required: "Seleccione una especie" },
+            edad: { required: "Ingrese la edad", min: "Debe ser positiva", max: "Edad no valida" }
+        }
+    });
+});
+</script>
+
+{% endblock %}
+
+

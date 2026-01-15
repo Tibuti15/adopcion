@@ -1,0 +1,106 @@
+{% extends "./plantilla.html" %}
+{% block contenido %}
+<div class="container mt-5">
+    <h2 class="mb-3">Informe de Estado de Adopciones</h2>
+    <p class="lead">Distribución actual de las mascotas en el refugio.</p>
+
+    <hr>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card text-white bg-secondary mb-3 shadow">
+                <div class="card-header">Total de Mascotas Registradas</div>
+                <div class="card-body text-center">
+                    <h1 class="card-title">{{ totalGeneral }}</h1>
+                    <p class="card-text">Mascotas en total</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3 shadow">
+                <div class="card-header">Mascotas Adoptadas</div>
+                <div class="card-body text-center">
+                    <h1 class="card-title">{{ totalAdoptadas }}</h1>
+                    <p class="card-text">Representa el {{ porcentajeAdoptadas|floatformat:1 }}% del total.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3 shadow">
+                <div class="card-header">Mascotas Disponibles</div>
+                <div class="card-body text-center">
+                    <h1 class="card-title">{{ totalDisponibles }}</h1>
+                    <p class="card-text">Mascotas disponibles actualmente.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de gráficos -->
+    <div class="row mt-5">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">🐾 Especies Más Adoptadas</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chart_especies" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">📊 Relación de Adopciones</h5>
+                </div>
+                <div class="card-body">
+                    <div id="chart_estado" style="height: 400px;"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-warning mt-4" role="alert">
+        <strong>Reflexión Estratégica:</strong>
+        Un porcentaje de adopción del {{ porcentajeAdoptadas|floatformat:1 }}% es un indicador clave de la efectividad de nuestros programas.
+        Debemos concentrar los recursos en reducir el número de mascotas disponibles.
+    </div>
+</div>
+
+<!-- Scripts para los gráficos -->
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+  google.charts.load('current', {'packages':['corechart']});
+  google.charts.setOnLoadCallback(drawCharts);
+
+  function drawCharts() {
+    // Gráfico de barras (especies más adoptadas)
+    var data1 = google.visualization.arrayToDataTable({{ chart_especies|safe }});
+    var options1 = {
+      title: 'Mascotas más adoptadas por especie',
+      legend: { position: 'none' },
+      bars: 'vertical',
+      height: 400,
+      colors: ['#28a745'],
+      hAxis: { title: 'Especie' },
+      vAxis: { title: 'Cantidad' }
+    };
+    var chart1 = new google.visualization.ColumnChart(document.getElementById('chart_especies'));
+    chart1.draw(data1, options1);
+
+    // Gráfico de pastel (adoptadas vs disponibles)
+    var data2 = google.visualization.arrayToDataTable({{ chart_estado|safe }});
+    var options2 = {
+      title: 'Relación de adopciones',
+      pieHole: 0.4,
+      height: 400,
+      colors: ['#28a745', '#17a2b8']
+    };
+    var chart2 = new google.visualization.PieChart(document.getElementById('chart_estado'));
+    chart2.draw(data2, options2);
+  }
+</script>
+{% endblock %}

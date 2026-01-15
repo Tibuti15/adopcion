@@ -1,0 +1,97 @@
+{% extends './plantilla.html' %}
+{% block contenido %}
+<br><br><br><br>
+
+<div class="row">
+    <div class="col-md-3"></div>
+    <div class="col-md-6 bg-light">
+        <h1>Editar Persona</h1>
+        <form action="/inicio2/procesarEdicionPersona/" method="post" id="frm_editar_persona" enctype="multipart/form-data">
+            
+            {% csrf_token %}
+
+            <input type="hidden" name="id" value="{{ personaEditar.id }}">
+            <label for="">Nombres:</label><br>
+            <input class="form-control" type="text" name="nombres" id="nombres"  value="{{ personaEditar.nombres }}" ><br>
+
+            <label for="">Apellidos:</label><br>
+            <input class="form-control" type="text" name="apellidos" id="apellidos"  value="{{ personaEditar.apellidos }}"><br>
+
+            <label for="">Edad:</label><br>
+            <input class="form-control" type="number" name="edad" id="edad"  value="{{ personaEditar.edad }}"><br>
+
+            <label for="">Teléfono:</label><br>
+            <input class="form-control" type="number" name="telefono" id="telefono"  value="{{ personaEditar.telefono }}"><br>
+
+            <label for="">Correo:</label><br>
+            <input class="form-control" type="email" name="correo" id="correo"  value="{{ personaEditar.correo }}"><br>
+
+            <label for="">Foto</label><br>
+            <input type="file" name="foto" id="foto" class="form-control" accept="image/*"><br>
+
+            {% if personaEditar.foto %}
+            
+            <img src="{{ personaEditar.foto.url }}" alt="Foto actual" width="400"><br><br>
+            {% endif %}
+
+            <br>
+            <button class="btn btn-success" type="submit">Guardar</button>
+            <a class="btn btn-outline-danger" href="/inicio2/">Cancelar</a><br><br><br>
+        </form>
+    </div>
+    <div class="col-md-3"></div>
+</div>
+
+<script>
+    $("#frm_editar_persona").validate({
+        rules: {
+            "nombre": { required: true, minlength: 3, maxlength: 50 },
+            "apellidos": { required: true, minlength: 3 },
+            "edad": { required: true, digits: true ,min: 10, max: 70},
+            "telefono": { required: true , minlength: 10, maxlength: 10 },
+            "correo": { required: true, email: true }
+        },
+        messages: {
+            "nombre": {
+                required: "Campo obligatorio",
+                minlength: "Mínimo 3 caracteres",
+                maxlength: "Máximo 50 caracteres"
+            },
+            "apellidos": {
+                required: "Campo obligatorio",
+                minlength: "Mínimo 3 caracteres"
+            },
+            "edad": {
+                required: "Campo obligatorio",
+                digits: "Solo números",
+                min:"Debe tener mas de 10 años para adoptar",
+                max: "la edad maxima es de 70 años"
+            },
+            "telefono": {
+                required: "Campo obligatorio",
+                minlength: "Mínimo 10 caracteres",
+                maxlength: "Máximo 10 caracteres"
+            },
+            "correo": {
+                required: "Campo obligatorio",
+                email: "Correo no válido"
+            }
+        },
+        errorClass: "is-invalid",
+        validClass: "is-valid",
+        errorPlacement: function (error, element) {
+            error.insertAfter(element);
+        }
+    });
+</script>
+
+<script>
+    $("#foto").fileinput({
+        language: "es",
+        allowedFileExtensions: ["png", "jpg", "jpeg", "pdf"],
+        showCaption: false,
+        dropZoneEnabled: true,
+        showClose: false
+    });
+</script>
+{% endblock %}
