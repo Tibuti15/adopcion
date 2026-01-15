@@ -3,65 +3,135 @@
 <br><br><br><br>
 
 <div class="row">
-    <div class="col-md-3"></div>
-    <div class="col-md-6 bg-light p-4 rounded">
-        <h1>Editar adopcion</h1>
-        <form action="{% url 'procesoEditarAdopcion' %}" method="post" id="frm_editar_Ado">
-            {% csrf_token %}
+    <div class="col-md-8">
+        <div class="bg-light p-4 rounded">
+            <h1>Editar adopción</h1>
+            <form action="{% url 'procesoEditarAdopcion' %}" method="post" id="frm_editar_Ado">
+                {% csrf_token %}
 
-            <input type="hidden" name="id" value="{{ adopcionEditar.id }}">
+                <input type="hidden" name="id" value="{{ adopcionEditar.id }}">
+                <input type="hidden" name="mascota" id="mascota_hidden" value="{{ adopcionEditar.mascota.id }}">
 
-            <label for="nombre_adoptante">Nombre Adoptante</label>
-            <input class="form-control" type="text" name="nombre_adoptante" id="nombre_adoptante" value="{{ adopcionEditar.nombre_adoptante }}" required>
-            <br>
+                <label for="nombre_adoptante">Nombre Adoptante</label>
+                <input class="form-control" type="text" name="nombre_adoptante" id="nombre_adoptante" value="{{ adopcionEditar.nombre_adoptante }}" required>
+                <br>
 
-            <label for="correo">Correo</label>
-            <input class="form-control" type="email" name="correo" id="correo" value="{{ adopcionEditar.correo }}" required>
-            <br>
+                <label for="correo">Correo</label>
+                <input class="form-control" type="email" name="correo" id="correo" value="{{ adopcionEditar.correo }}" required>
+                <br>
 
-            <label for="telefono">Telefono</label>
-            <input class="form-control" type="text" name="telefono" id="telefono" value="{{ adopcionEditar.telefono }}" required>
-            <br>
+                <label for="telefono">Teléfono</label>
+                <input class="form-control" type="text" name="telefono" id="telefono" value="{{ adopcionEditar.telefono }}" required>
+                <br>
 
-            <label for="mascota">Mascota</label>
-            <select class="form-control" name="mascota" id="mascota" required>
-                {% for mascota in mascotas %}
-                    <option value="{{ mascota.id }}" {% if mascota.id == adopcionEditar.mascota.id %}selected{% endif %}>
-                        {{ mascota.nombre }}
-                    </option>
-                {% endfor %}
-            </select>
-            <br>
+                <!-- Mascota actual -->
+                <label>Mascota Actual</label>
+                <div id="mascotaActual" class="mb-3">
+                    {% if adopcionEditar.mascota.imgMascota %}
+                        <img src="{{ adopcionEditar.mascota.imgMascota.url }}" height="80" class="img-thumbnail">
+                    {% endif %}
+                    <p><strong>{{ adopcionEditar.mascota.nombre }}</strong></p>
+                </div>
 
-            <button class="btn btn-primary" type="submit">Actualizar</button>
-            <a class="btn btn-outline-danger" href="{% url 'inicioadopcion' %}">Cancelar</a>
-        </form>
+                <!-- Área para cambiar mascota -->
+                <label>Cambiar Mascota</label>
+                <div id="dropZoneMascota" style="border: 2px dashed #ccc; padding: 20px; text-align: center; min-height: 100px; margin-bottom: 10px;">
+                    <p>Arrastra aquí una nueva mascota o selecciona de la lista</p>
+                    <div id="previewMascota"></div>
+                </div>
+                <br>
+
+                <button class="btn btn-primary" type="submit">Actualizar</button>
+                <a class="btn btn-outline-danger" href="{% url 'inicioadopcion' %}">Cancelar</a>
+            </form>
+        </div>
     </div>
-    <div class="col-md-3"></div>
+
+    <div class="col-md-4">
+        <div class="bg-light p-4 rounded">
+            <h3>Mascotas Disponibles</h3>
+            <p>Arrastra cualquier imagen al recuadro de arriba</p>
+            <div style="max-height: 500px; overflow-y: auto;">
+                <div class="row" id="galeriaMascotas">
+                    {% for mascota in mascotas %}
+                        {% if mascota.imgMascota and mascota.id != adopcionEditar.mascota.id %}
+                            <div class="col-6 mb-3">
+                                <img src="{{ mascota.imgMascota.url }}" 
+                                     class="img-thumbnail mascota-imagen" 
+                                     height="100" 
+                                     alt="{{ mascota.nombre }}"
+                                     data-id="{{ mascota.id }}"
+                                     data-nombre="{{ mascota.nombre }}"
+                                     data-especie="{{ mascota.especie }}"
+                                     data-edad="{{ mascota.edad }}"
+                                     style="cursor: grab;">
+                                <small>{{ mascota.nombre }}</small>
+                            </div>
+                        {% endif %}
+                    {% empty %}
+                        <p>No hay más mascotas disponibles</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
+$(document).ready(function() {
+    // Hacer las imágenes de mascotas arrastrables
+    $(".mascota-imagen").draggable({
+        revert: "invalid",
+        helper: "clone",
+        start: function(event, ui) {
+            $(ui.helper).css('opacity', 0.5);
+        }
+    });
+
+    // Hacer la dropZone receptora
+    $("#dropZoneMascota").droppable({
+        accept: ".mascota-imagen",
+        drop: function(event, ui) {
+            var mascotaId = ui.draggable.data('id');
+            var mascotaNombre = ui.draggable.data('nombre');
+            var mascotaEspecie = ui.draggable.data('especie');
+            var mascotaEdad = ui.draggable.data('edad');
+            
+            // Actualizar el campo oculto
+            $("#mascota_hidden").val(mascotaId);
+            
+            // Mostrar información de la nueva mascota seleccionada
+            $("#previewMascota").html(`
+                <div class="alert alert-warning">
+                    <strong>Nueva mascota seleccionada:</strong><br>
+                    ${mascotaNombre}<br>
+                    Especie: ${mascotaEspecie}<br>
+                    Edad: ${mascotaEdad} años
+                </div>
+            `);
+        }
+    });
+
+    // Validación
     $("#frm_editar_Ado").validate({
         rules: {
             "nombre_adoptante": { required: true, minlength: 3 },
             "correo": { required: true, email: true },
-            "telefono": { required: true, minlength: 7 },
-            "mascota": { required: true }
+            "telefono": { required: true, minlength: 7 }
         },
         messages: {
             "nombre_adoptante": {
                 required: "Ingrese el nombre del adoptante",
-                minlength: "Minimo 3 caracteres"
+                minlength: "Mínimo 3 caracteres"
             },
             "correo": {
                 required: "Ingrese un correo",
-                email: "Ingrese un correo valido"
+                email: "Ingrese un correo válido"
             },
             "telefono": {
-                required: "Ingrese un telefono",
-                minlength: "Minimo 7 caracteres"
-            },
-            "mascota": { required: "Seleccione una mascota" }
+                required: "Ingrese un teléfono",
+                minlength: "Mínimo 7 caracteres"
+            }
         },
         errorClass: "is-invalid",
         validClass: "is-valid",
@@ -69,7 +139,30 @@
             error.insertAfter(element);
         }
     });
+
+    // Estilos para la dropZone
+    $("#dropZoneMascota").hover(
+        function() {
+            $(this).css('border-color', '#ffc107');
+            $(this).css('background-color', '#f8f9fa');
+        },
+        function() {
+            $(this).css('border-color', '#ccc');
+            $(this).css('background-color', 'white');
+        }
+    );
+});
 </script>
 
-{% endblock %}
+<style>
+.mascota-imagen:hover {
+    transform: scale(1.1);
+    transition: transform 0.3s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+.ui-draggable-dragging {
+    z-index: 1000;
+}
+</style>
 
+{% endblock %}

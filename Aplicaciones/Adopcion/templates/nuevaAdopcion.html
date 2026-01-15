@@ -3,70 +3,339 @@
 <br><br><br><br>
 
 <div class="row">
-    <div class="col-md-3"></div>
-    <div class="col-md-6 bg-light p-4 rounded">
-        <h1>Nueva adopcion</h1>
-        <form action="{% url 'guardarAdo' %}" method="post" id="frm_nueva_Ado">
-            {% csrf_token %}
+    <div class="col-md-8">
+        <div class="bg-light p-4 rounded">
+            <h1>Nueva adopción</h1>
+            <form action="{% url 'guardarAdo' %}" method="post" id="frm_nueva_Ado">
+                {% csrf_token %}
 
-            <label for="nombre_adoptante">Nombre Adoptante</label>
-            <input class="form-control" type="text" name="nombre_adoptante" id="nombre_adoptante" placeholder="Ingrese nombre" required>
-            <br>
+                <!-- Campo oculto para ID de mascota (OBLIGATORIO) -->
+                <input type="hidden" name="mascota" id="mascota_hidden" value="">
 
-            <label for="correo">Correo</label>
-            <input class="form-control" type="email" name="correo" id="correo" placeholder="Ingrese correo" required>
-            <br>
+                <!-- Datos del adoptante -->
+                <label for="nombre_adoptante">Nombre Adoptante</label>
+                <input class="form-control" type="text" name="nombre_adoptante" id="nombre_adoptante" placeholder="Ingrese nombre" required>
+                <br>
 
-            <label for="telefono">Telefono</label>
-            <input class="form-control" type="text" name="telefono" id="telefono" placeholder="Ingrese telefono" required>
-            <br>
+                <label for="correo">Correo</label>
+                <input class="form-control" type="email" name="correo" id="correo" placeholder="Ingrese correo" required>
+                <br>
 
-            <label for="mascota">Mascota</label>
-            <select class="form-control" name="mascota" id="mascota" required>
-                <option value="">Seleccione una mascota</option>
-                {% for mascota in mascotas %}
-                    <option value="{{ mascota.id }}">{{ mascota.nombre }}</option>
-                {% endfor %}
-            </select>
-            <br>
+                <label for="telefono">Teléfono</label>
+                <input class="form-control" type="text" name="telefono" id="telefono" placeholder="Ingrese teléfono" required>
+                <br>
 
-            <button class="btn btn-success" type="submit">Guardar</button>
-            <a class="btn btn-outline-danger" href="{% url 'inicioadopcion' %}">Cancelar</a>
-        </form>
+                <!-- ZONA DE ARRASTRE -->
+                <label>Seleccionar Mascota <span class="text-danger">*</span></label>
+                <div id="dropZoneMascota" 
+                     style="border: 2px dashed #ccc; 
+                            padding: 30px; 
+                            text-align: center; 
+                            min-height: 150px;
+                            margin-bottom: 15px;
+                            border-radius: 10px;
+                            background-color: #f8f9fa;
+                            position: relative;">
+                    
+                    <div id="instrucciones">
+                        <i class="fas fa-paw fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Arrastra una mascota aquí desde la galería</p>
+                        <small class="text-muted">O haz clic en una imagen de la derecha</small>
+                    </div>
+                    
+                    <!-- Vista previa de mascota seleccionada -->
+                    <div id="previewMascota" style="display: none;"></div>
+                </div>
+                
+                <!-- Mensaje de error para mascota -->
+                <div id="errorMascota" class="text-danger small mb-3" style="display: none;">
+                    <i class="fas fa-exclamation-circle"></i> Debes seleccionar una mascota
+                </div>
+                <br>
+
+                <button class="btn btn-success" type="submit" id="btnGuardar">Guardar</button>
+                <a class="btn btn-outline-danger" href="{% url 'inicioadopcion' %}">Cancelar</a>
+            </form>
+        </div>
     </div>
-    <div class="col-md-3"></div>
+
+    <div class="col-md-4">
+        <div class="bg-light p-4 rounded">
+            <h3><i class="fas fa-images"></i> Mascotas Disponibles</h3>
+            <p class="text-muted">Haz clic o arrastra para seleccionar</p>
+            
+            <div style="max-height: 500px; overflow-y: auto;">
+                <div class="row" id="galeriaMascotas">
+                    {% for mascota in mascotas_con_imagen %}
+                        <div class="col-6 mb-3">
+                            <div class="card mascota-card" 
+                                 data-id="{{ mascota.id }}"
+                                 data-nombre="{{ mascota.nombre }}"
+                                 data-especie="{{ mascota.get_especie_display }}"
+                                 data-edad="{{ mascota.edad }}"
+                                 data-img="{{ mascota.imgMascota.url }}"
+                                 style="cursor: pointer; border: 2px solid transparent;"
+                                 onclick="seleccionarMascota(this)">
+                                
+                                <img src="{{ mascota.imgMascota.url }}" 
+                                     class="card-img-top" 
+                                     height="120"
+                                     style="object-fit: cover;"
+                                     alt="{{ mascota.nombre }}">
+                                
+                                <div class="card-body p-2 text-center">
+                                    <small class="card-title">{{ mascota.nombre }}</small>
+                                    <br>
+                                    <small class="text-muted">{{ mascota.edad }} años</small>
+                                </div>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12">
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                No hay mascotas disponibles para adopción
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
+<!-- jQuery UI para drag & drop -->
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 <script>
-    $("#frm_nueva_Ado").validate({
-        rules: {
-            "nombre_adoptante": { required: true, minlength: 3 },
-            "correo": { required: true, email: true },
-            "telefono": { required: true, minlength: 7 },
-            "mascota": { required: true }
-        },
-        messages: {
-            "nombre_adoptante": {
-                required: "Ingrese el nombre del adoptante",
-                minlength: "Minimo 3 caracteres"
-            },
-            "correo": {
-                required: "Ingrese un correo",
-                email: "Ingrese un correo valido"
-            },
-            "telefono": {
-                required: "Ingrese un telefono",
-                minlength: "Minimo 7 caracteres"
-            },
-            "mascota": { required: "Seleccione una mascota" }
-        },
-        errorClass: "is-invalid",
-        validClass: "is-valid",
-        errorPlacement: function(error, element) {
-            error.insertAfter(element);
+// Variable global para controlar selección
+var mascotaSeleccionada = false;
+var mascotaSeleccionadaId = '';
+
+$(document).ready(function() {
+    // Hacer las tarjetas de mascotas arrastrables
+    $(".mascota-card").draggable({
+        revert: "invalid",
+        helper: "clone",
+        cursor: "move",
+        start: function(event, ui) {
+            $(ui.helper).css('opacity', 0.7);
+            $(ui.helper).css('z-index', 10000);
+            $(ui.helper).width(150); // Tamaño fijo para el helper
         }
     });
+
+    // Hacer la dropZone receptora
+    $("#dropZoneMascota").droppable({
+        accept: ".mascota-card",
+        tolerance: "touch",
+        hoverClass: "drop-hover",
+        drop: function(event, ui) {
+            seleccionarMascotaPorDrag(ui.draggable[0]);
+        }
+    });
+
+    // Estilo para hover
+    $("#dropZoneMascota").hover(
+        function() {
+            if (!mascotaSeleccionada) {
+                $(this).css({
+                    'border-color': '#007bff',
+                    'background-color': '#e7f3ff'
+                });
+            }
+        },
+        function() {
+            if (!mascotaSeleccionada) {
+                $(this).css({
+                    'border-color': '#ccc',
+                    'background-color': '#f8f9fa'
+                });
+            }
+        }
+    );
+
+    // Validación personalizada del formulario
+    $("#frm_nueva_Ado").on('submit', function(e) {
+        e.preventDefault();
+        
+        // Validar campos básicos
+        var nombre = $("#nombre_adoptante").val().trim();
+        var correo = $("#correo").val().trim();
+        var telefono = $("#telefono").val().trim();
+        
+        var errores = [];
+        
+        // Validar nombre
+        if (nombre.length < 3) {
+            errores.push("El nombre debe tener al menos 3 caracteres");
+            $("#nombre_adoptante").addClass('is-invalid');
+        } else {
+            $("#nombre_adoptante").removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        // Validar correo
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(correo)) {
+            errores.push("Ingrese un correo válido");
+            $("#correo").addClass('is-invalid');
+        } else {
+            $("#correo").removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        // Validar teléfono
+        if (telefono.length < 7) {
+            errores.push("El teléfono debe tener al menos 7 dígitos");
+            $("#telefono").addClass('is-invalid');
+        } else {
+            $("#telefono").removeClass('is-invalid').addClass('is-valid');
+        }
+        
+        // Validar mascota seleccionada
+        if (!mascotaSeleccionada) {
+            errores.push("Debe seleccionar una mascota");
+            $("#errorMascota").show();
+            $("#dropZoneMascota").css({
+                'border-color': '#dc3545',
+                'background-color': '#f8d7da'
+            });
+        } else {
+            $("#errorMascota").hide();
+        }
+        
+        // Mostrar errores o enviar formulario
+        if (errores.length > 0) {
+            // Mostrar todos los errores en un solo alert
+            Swal.fire({
+                title: 'Error en el formulario',
+                html: '<ul>' + errores.map(error => '<li>' + error + '</li>').join('') + '</ul>',
+                icon: 'error',
+                confirmButtonText: 'Entendido'
+            });
+            return false;
+        } else {
+            // Todo está bien, enviar formulario
+            this.submit();
+        }
+    });
+});
+
+// Función para seleccionar mascota por clic
+function seleccionarMascota(elemento) {
+    var mascotaId = $(elemento).data('id');
+    var mascotaNombre = $(elemento).data('nombre');
+    var mascotaEspecie = $(elemento).data('especie');
+    var mascotaEdad = $(elemento).data('edad');
+    var mascotaImg = $(elemento).data('img');
+    
+    // Actualizar variables globales
+    mascotaSeleccionada = true;
+    mascotaSeleccionadaId = mascotaId;
+    
+    // Actualizar campo oculto
+    $("#mascota_hidden").val(mascotaId);
+    
+    // Mostrar vista previa
+    $("#instrucciones").hide();
+    $("#previewMascota").show().html(`
+        <div class="alert alert-success">
+            <div class="row align-items-center">
+                <div class="col-3">
+                    <img src="${mascotaImg}" class="img-thumbnail" height="80" style="object-fit: cover;">
+                </div>
+                <div class="col-7">
+                    <h5><strong>${mascotaNombre}</strong></h5>
+                    <p class="mb-0">
+                        <i class="fas fa-dog"></i> ${mascotaEspecie}<br>
+                        <i class="fas fa-birthday-cake"></i> ${mascotaEdad} años
+                    </p>
+                </div>
+                <div class="col-2 text-end">
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deseleccionarMascota()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `);
+    
+    // Cambiar estilo de drop zone
+    $("#dropZoneMascota").css({
+        'border-color': '#28a745',
+        'background-color': '#e8f5e9'
+    });
+    
+    // Ocultar error
+    $("#errorMascota").hide();
+    
+    // Marcar todas las tarjetas como no seleccionadas
+    $(".mascota-card").css('border-color', 'transparent');
+    // Marcar la seleccionada
+    $(elemento).css('border-color', '#28a745');
+}
+
+// Función para seleccionar por drag & drop
+function seleccionarMascotaPorDrag(elemento) {
+    seleccionarMascota(elemento);
+}
+
+// Función para deseleccionar
+function deseleccionarMascota() {
+    // Limpiar variables
+    mascotaSeleccionada = false;
+    mascotaSeleccionadaId = '';
+    
+    // Limpiar campo oculto
+    $("#mascota_hidden").val("");
+    
+    // Limpiar vista previa
+    $("#previewMascota").hide().html("");
+    $("#instrucciones").show();
+    
+    // Restaurar estilo de drop zone
+    $("#dropZoneMascota").css({
+        'border-color': '#ccc',
+        'background-color': '#f8f9fa'
+    });
+    
+    // Quitar borde de selección de todas las tarjetas
+    $(".mascota-card").css('border-color', 'transparent');
+}
 </script>
 
-{% endblock %}
+<style>
+.mascota-card {
+    transition: all 0.3s;
+    border-radius: 8px;
+    overflow: hidden;
+}
+.mascota-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: #007bff !important;
+}
+.mascota-card.selected {
+    border-color: #28a745 !important;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.3);
+}
+.drop-hover {
+    border-color: #17a2b8 !important;
+    background-color: #d1ecf1 !important;
+}
+.ui-draggable-dragging {
+    transform: rotate(5deg);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+}
+.is-valid {
+    border-color: #28a745 !important;
+}
+.is-invalid {
+    border-color: #dc3545 !important;
+}
+</style>
 
+{% endblock %}
